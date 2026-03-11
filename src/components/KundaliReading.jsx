@@ -3,12 +3,25 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './KundaliReading.css';
 
-export default function KundaliReading({ reading, userName, onBack }) {
+export default function KundaliReading({ reading, userName, onBack, onRetry }) {
+  const isFallback = reading._isFallback || reading.sunSign === "Unable to determine";
+
   return (
     <div className="kundali-reading-container">
       <button className="btn-back-nav" onClick={onBack}>
         ← Back to Home
       </button>
+
+      {isFallback && (
+        <div className="kundali-fallback-banner glass-panel fade-in-up">
+          <p>⚠️ The Gemini API is temporarily unavailable (likely rate limited on the free tier). The data below is placeholder.</p>
+          {onRetry && (
+            <button className="btn-primary" onClick={onRetry} style={{ marginTop: '0.75rem' }}>
+              🔄 Retry Now
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="kundali-header fade-in-up">
         <span className="header-icon">🕉️</span>
@@ -98,4 +111,5 @@ KundaliReading.propTypes = {
   }).isRequired,
   userName: PropTypes.string.isRequired,
   onBack: PropTypes.func.isRequired,
+  onRetry: PropTypes.func,
 };

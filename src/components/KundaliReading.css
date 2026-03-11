@@ -107,6 +107,20 @@
   top: 0.6rem;
 }
 
+/* Fallback banner */
+.kundali-fallback-banner {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  border-left: 3px solid #f59e0b;
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.08), rgba(20, 20, 40, 0.4));
+}
+
+.kundali-fallback-banner p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
 /* Planets grid */
 .planets-grid {
   display: grid;

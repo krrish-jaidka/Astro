@@ -193,22 +193,38 @@ function cleanupOldCache() {
 
 /**
  * Generates a personalized Kundali (Vedic birth chart) reading using Gemini API.
- * Results are cached by the user's birth details.
+ * Only caches successful API results — never caches fallback data.
  */
 export async function getKundaliReading(details) {
   const { fullName, dateOfBirth, timeOfBirth, placeOfBirth } = details;
   
-  // Cache key based on birth details (these never change)
-  const cacheKey = `kundali_${dateOfBirth}_${timeOfBirth}_${placeOfBirth}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  // Cache key based on birth details
+  const cacheKey = `kundali_v2_${dateOfBirth}_${timeOfBirth}_${placeOfBirth}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  
+  // Check cache — only use if it's a valid (non-fallback) reading
   try {
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
-      console.log(`Using cached Kundali for ${fullName}`);
-      return JSON.parse(cachedData);
+      const parsed = JSON.parse(cachedData);
+      // Skip cache if it was a fallback (bad data from a previous failed attempt)
+      if (parsed.sunSign && parsed.sunSign !== "Unable to determine") {
+        console.log(`⚡ Using cached Kundali for ${fullName}`);
+        return parsed;
+      } else {
+        // Remove the bad cache entry
+        localStorage.removeItem(cacheKey);
+        console.log(`🗑️ Cleared bad Kundali cache for ${fullName}`);
+      }
     }
   } catch (e) {
     console.warn("Failed to read Kundali cache", e);
   }
+
+  // Also clear any old v1 cache keys
+  try {
+    const oldKey = `kundali_${dateOfBirth}_${timeOfBirth}_${placeOfBirth}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    localStorage.removeItem(oldKey);
+  } catch (e) { /* ignore */ }
 
   try {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -249,7 +265,7 @@ Return the response strictly as a JSON object with NO markdown formatting, backt
   "challenges": ["Challenge 1", "Challenge 2", "Challenge 3", "Challenge 4"]
 }`;
 
-    await delay(600);
+    await delay(800);
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
@@ -263,9 +279,10 @@ Return the response strictly as a JSON object with NO markdown formatting, backt
       throw parseError;
     }
 
-    // Cache the result
+    // Only cache successful API results
     try {
       localStorage.setItem(cacheKey, JSON.stringify(readingData));
+      console.log(`💾 Cached Kundali for ${fullName}`);
     } catch (e) {
       console.warn("Failed to save Kundali cache", e);
     }
@@ -274,8 +291,9 @@ Return the response strictly as a JSON object with NO markdown formatting, backt
 
   } catch (error) {
     console.error("Error fetching Kundali from Gemini:", error);
-    // Fallback
+    // Return fallback but do NOT cache it — user can retry
     return {
+      _isFallback: true,
       sunSign: "Unable to determine",
       moonSign: "Unable to determine",
       ascendant: "Unable to determine",
@@ -286,12 +304,10 @@ Return the response strictly as a JSON object with NO markdown formatting, backt
         { name: "Saturn", sign: "N/A" }, { name: "Rahu", sign: "N/A" },
         { name: "Ketu", sign: "N/A" }
       ],
-      personalityTraits: "The cosmic energies are currently unavailable. Please try again later.",
+      personalityTraits: "The cosmic energies are currently unavailable. This is likely due to API rate limits on the free tier. Please wait a minute and try again.",
       lifePath: "Your path is being written by the stars. Please try again shortly.",
       strengths: ["Resilience", "Patience", "Adaptability", "Determination"],
       challenges: ["Overthinking", "Self-doubt", "Impatience", "Perfectionism"]
     };
   }
 }
-
-

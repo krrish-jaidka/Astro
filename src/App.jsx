@@ -10,6 +10,7 @@ function App() {
   const [selectedSign, setSelectedSign] = useState(null);
   const [kundaliData, setKundaliData] = useState(null);
   const [kundaliUserName, setKundaliUserName] = useState('');
+  const [kundaliFormData, setKundaliFormData] = useState(null);
 
   const handleSelectSign = (sign) => {
     setTimeout(() => {
@@ -30,6 +31,7 @@ function App() {
 
   const handleKundaliSubmit = async (formData) => {
     setKundaliUserName(formData.fullName);
+    setKundaliFormData(formData);
     setActiveView('kundaliLoading');
     try {
       const reading = await getKundaliReading(formData);
@@ -54,7 +56,7 @@ function App() {
           </div>
         );
       case 'kundaliReading':
-        return <KundaliReading reading={kundaliData} userName={kundaliUserName} onBack={handleBackToHome} />;
+        return <KundaliReading reading={kundaliData} userName={kundaliUserName} onBack={handleBackToHome} onRetry={() => kundaliFormData && handleKundaliSubmit(kundaliFormData)} />;
       default:
         return (
           <>
