@@ -1,0 +1,100 @@
+.sign-selector-container {
+  width: 100%;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.sign-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease-out backwards;
+}
+
+.sign-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  color: var(--accent);
+  transition: transform 0.4s ease;
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.sign-name {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.sign-dates {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
+/* Hover effects */
+.sign-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--accent-glow);
+  box-shadow: 0 12px 36px 0 rgba(139, 92, 246, 0.25);
+}
+
+.sign-card:hover .sign-icon {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.glow-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.5s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.sign-card:hover .glow-effect {
+  width: 150%;
+  height: 150%;
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .sign-card {
+    padding: 1.5rem 1rem;
+  }
+  
+  .sign-icon {
+    font-size: 2.5rem;
+  }
+  
+  .sign-name {
+    font-size: 1.2rem;
+  }
+  
+  .sign-dates {
+    font-size: 0.8rem;
+  }
+}
