@@ -1,10 +1,81 @@
 // src/components/DailyReading.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { getDailyReading } from '../utils/astrologyData';
 import './DailyReading.css';
 
 export default function DailyReading({ sign, onBack }) {
-  const reading = getDailyReading(sign.id);
+  const [reading, setReading] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function loadReading() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getDailyReading(sign.id);
+        if (isMounted) {
+          setReading(data);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError("Failed to load your reading. Please try again.");
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadReading();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [sign.id]);
+
+  if (isLoading) {
+    return (
+      <div className="daily-reading-container">
+        <button className="btn-back" onClick={onBack}>
+          ← Back to signs
+        </button>
+        <div className="reading-header fade-in-up">
+          <div className="sign-badge">
+            <span className="sign-badge-icon">{sign.icon}</span>
+            <span className="sign-badge-name">{sign.name}</span>
+          </div>
+          <h2>Daily Forecast</h2>
+        </div>
+        <div className="loading-state fade-in-up">
+          <div className="spinner"></div>
+          <p>Consulting the stars...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="daily-reading-container">
+        <button className="btn-back" onClick={onBack}>
+          ← Back to signs
+        </button>
+        <div className="reading-header fade-in-up">
+          <div className="sign-badge">
+            <span className="sign-badge-icon">{sign.icon}</span>
+            <span className="sign-badge-name">{sign.name}</span>
+          </div>
+          <h2>Daily Forecast</h2>
+        </div>
+        <div className="error-state fade-in-up">
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="daily-reading-container">
@@ -50,3 +121,12 @@ export default function DailyReading({ sign, onBack }) {
     </div>
   );
 }
+
+DailyReading.propTypes = {
+  sign: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    icon: PropTypes.string.isRequired,
+  }).isRequired,
+  onBack: PropTypes.func.isRequired,
+};
