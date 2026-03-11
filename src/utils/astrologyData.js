@@ -66,113 +66,122 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 /**
- * Generates a dynamic daily reading for a given sign using Gemini API,
- * with localStorage caching to minimize API calls.
+ * Returns the cache key for a sign for today.
+ */
+function getTodayCacheKey(signId) {
+  const date = new Date();
+  return `astrodaily_v6_${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}_${signId}`;
+}
+
+/**
+ * Gets a daily reading for a specific sign.
+ * - First click: fetches from Gemini API and caches in localStorage.
+ * - Next clicks (same day, even after reload): served instantly from cache.
+ * - New day: fresh fetch, old cache cleaned up.
  */
 export async function getDailyReading(signId) {
   const date = new Date();
   const dateStr = date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const cacheKey = getTodayCacheKey(signId);
   const signInfo = ZODIAC_SIGNS.find(s => s.id === signId);
   const signName = signInfo ? signInfo.name : signId;
 
-  // 1. Check Cache First
-  const cacheKey = `astrodaily_v4_${dateStr}_${signId}`;
+  // 1. Check cache — serves instantly if this sign was already fetched today
   try {
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
-      console.log(`Using cached reading for ${signName} on ${dateStr}`);
+      console.log(`⚡ Cache hit for ${signName}`);
       return JSON.parse(cachedData);
     }
   } catch (e) {
-    console.warn("Failed to read from localStorage cache", e);
+    console.warn("Failed to read cache", e);
   }
 
-  // 2. Fetch from API if not cached
+  // 2. Fetch only this sign from API
   try {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing VITE_GEMINI_API_KEY in environment variables.");
-    }
+    if (!apiKey) throw new Error("Missing VITE_GEMINI_API_KEY");
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.9 } });
 
     const prompt = `You are an expert astrologer. Generate a highly unique and specific daily astrology reading for the zodiac sign ${signName} for today, ${dateStr}.
 
-Return the response strictly as a JSON object with NO markdown formatting, backticks, or extra text. Use the exact keys shown below, but REPLACE the values with completely new, unique, and tailored content for ${signName}:
+Return the response strictly as a JSON object with NO markdown formatting, backticks, or extra text. REPLACE ALL values with unique content for ${signName}:
 
 {
-  "luckyNumber": 12, // Replace with a random number 1-99
-  "energy": "Short phrase about today's energy for ${signName}", // Replace this text
-  "avoid": "Short phrase of what to avoid today", // Replace this text
-  "insight": "A 1-2 sentence daily horoscope insight specific to ${signName}.", // Replace this text
-  "personalizedFocus": "A 1-2 sentence personalized advice or focus area for ${signName}." // Replace this text
+  "luckyNumber": 42,
+  "energy": "A short unique phrase about today's energy for ${signName}",
+  "avoid": "A short unique phrase of what ${signName} should avoid today",
+  "insight": "A 1-2 sentence daily insight specific to ${signName}.",
+  "personalizedFocus": "A 1-2 sentence personalized advice for ${signName}."
 }`;
 
-    // Add a small delay before API call to help with basic rate limits
-    await delay(600);
+    await delay(500);
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
-    
-    // Clean up potential markdown formatting from the response
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
     let readingData;
-    
     try {
       readingData = JSON.parse(cleanJson);
     } catch (parseError) {
-      console.error("Failed to parse Gemini response as JSON:", responseText);
+      console.error("Failed to parse Gemini response:", responseText);
       throw parseError;
     }
 
-    const finalReading = {
-      ...readingData,
-      date: dateStr
-    };
+    const finalReading = { ...readingData, date: dateStr };
 
-    // 3. Save to Cache
+    // 3. Save to cache — next click or reload will be instant
     try {
       localStorage.setItem(cacheKey, JSON.stringify(finalReading));
-      setTimeout(() => cleanupOldCache(dateStr), 1000);
+      console.log(`💾 Cached reading for ${signName}`);
+      setTimeout(() => cleanupOldCache(), 1000);
     } catch (e) {
-      console.warn("Failed to save to localStorage cache", e);
+      console.warn("Failed to save cache", e);
     }
 
     return finalReading;
 
   } catch (error) {
-    console.error("Error fetching daily reading from Gemini. Using fallback.", error);
-    
-    // Deterministic fallback so signs have different readings even if API fails
+    console.error("Error fetching reading from Gemini. Using fallback.", error);
+
+    // Deterministic fallback unique per sign
     const seedString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${signId}`;
     let hash = 0;
     for (let i = 0; i < seedString.length; i++) {
-        hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
-        hash = hash & hash;
+      hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
+      hash = hash & hash;
     }
     const absHash = Math.abs(hash);
 
-    return {
+    const fallbackReading = {
       luckyNumber: (absHash % 99) + 1,
       energy: ENERGIES[absHash % ENERGIES.length] || "Reflective",
       avoid: AVOIDANCES[(absHash * 7) % AVOIDANCES.length] || "Overthinking",
-      insight: GENERAL_INSIGHTS[(absHash * 13) % GENERAL_INSIGHTS.length] || `The stars are clouded for ${signName}, take a moment to rest.`,
+      insight: GENERAL_INSIGHTS[(absHash * 13) % GENERAL_INSIGHTS.length] || `The stars are clouded for ${signName}.`,
       personalizedFocus: `Focus on grounding yourself today, ${signName}. Small, steady steps will lead to peace.`,
       date: dateStr
     };
+
+    // Cache the fallback too so reloads don't re-fetch
+    try { localStorage.setItem(cacheKey, JSON.stringify(fallbackReading)); } catch (e) { /* ignore */ }
+
+    return fallbackReading;
   }
 }
 
 /**
- * Removes cache entries that do not match the current date string
+ * Removes old cache entries (from previous days).
  */
-function cleanupOldCache(currentDateStr) {
+function cleanupOldCache() {
+  const todayPrefix = getTodayCacheKey('').replace(/_$/, ''); // e.g. astrodaily_v6_2026-3-11
   try {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('astrodaily_') && !key.includes(currentDateStr)) {
+      if (key && key.startsWith('astrodaily_') && !key.startsWith(todayPrefix)) {
         keysToRemove.push(key);
       }
     }
