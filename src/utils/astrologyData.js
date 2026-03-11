@@ -76,7 +76,7 @@ export async function getDailyReading(signId) {
   const signName = signInfo ? signInfo.name : signId;
 
   // 1. Check Cache First
-  const cacheKey = `astrodaily_${dateStr}_${signId}`;
+  const cacheKey = `astrodaily_v2_${dateStr}_${signId}`;
   try {
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
@@ -95,15 +95,17 @@ export async function getDailyReading(signId) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.7 } });
 
-    const prompt = `You are an expert astrologer. Generate a daily astrology reading for ${signName} for today, ${dateStr}.
+    const prompt = `You are an expert astrologer. Generate a highly unique and specific daily astrology reading for ${signName} for today, ${dateStr}.
+Crucially, DO NOT use generic examples. Ensure the energy and avoid phrases are completely uniquely tailored to ${signName}.
 Return the response strictly as a JSON object with the following keys, and no additional markdown or text:
 {
-  "luckyNumber": 0, // A number between 1 and 99
-  "energy": "string", // A short phrase describing the energy (e.g., "Focus & Clarity")
-  "avoid": "string", // A short phrase of what to avoid (e.g., "Impulsive decisions")
-  "insight": "string" // A 1-2 sentence daily horoscope insight
+  "luckyNumber": 0, // A random number between 1 and 99
+  "energy": "string", // A short, unique phrase describing today's energy for ${signName}
+  "avoid": "string", // A short, unique phrase of what ${signName} should avoid today
+  "insight": "string", // A 1-2 sentence daily horoscope insight specific to ${signName}
+  "personalizedFocus": "string" // A 1-2 sentence personalized advice or focus area for this specific sign today
 }`;
 
     // Add a small delay before API call to help with basic rate limits
@@ -149,6 +151,7 @@ Return the response strictly as a JSON object with the following keys, and no ad
       energy: "Reflective",
       avoid: "Overthinking",
       insight: "The stars are currently clouded, take a moment to look inward. (Fallback reading)",
+      personalizedFocus: "Take extra care of your mental well-being and rest.",
       date: dateStr
     };
   }

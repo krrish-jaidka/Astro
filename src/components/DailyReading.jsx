@@ -98,6 +98,11 @@ export default function DailyReading({ sign, onBack }) {
           <p>{reading.insight}</p>
         </div>
 
+        <div className="card-insight glass-panel fade-in-up" style={{ animationDelay: '0.15s' }}>
+          <h3>Personalized Focus</h3>
+          <p>{reading.personalizedFocus}</p>
+        </div>
+
         <div className="stats-row">
           <div className="card-stat glass-panel fade-in-up" style={{ animationDelay: '0.2s' }}>
             <div className="stat-label">Energy Type</div>
