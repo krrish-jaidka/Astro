@@ -76,7 +76,7 @@ export async function getDailyReading(signId) {
   const signName = signInfo ? signInfo.name : signId;
 
   // 1. Check Cache First
-  const cacheKey = `astrodaily_v2_${dateStr}_${signId}`;
+  const cacheKey = `astrodaily_v4_${dateStr}_${signId}`;
   try {
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
@@ -95,21 +95,22 @@ export async function getDailyReading(signId) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.7 } });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.9 } });
 
-    const prompt = `You are an expert astrologer. Generate a highly unique and specific daily astrology reading for ${signName} for today, ${dateStr}.
-Crucially, DO NOT use generic examples. Ensure the energy and avoid phrases are completely uniquely tailored to ${signName}.
-Return the response strictly as a JSON object with the following keys, and no additional markdown or text:
+    const prompt = `You are an expert astrologer. Generate a highly unique and specific daily astrology reading for the zodiac sign ${signName} for today, ${dateStr}.
+
+Return the response strictly as a JSON object with NO markdown formatting, backticks, or extra text. Use the exact keys shown below, but REPLACE the values with completely new, unique, and tailored content for ${signName}:
+
 {
-  "luckyNumber": 0, // A random number between 1 and 99
-  "energy": "string", // A short, unique phrase describing today's energy for ${signName}
-  "avoid": "string", // A short, unique phrase of what ${signName} should avoid today
-  "insight": "string", // A 1-2 sentence daily horoscope insight specific to ${signName}
-  "personalizedFocus": "string" // A 1-2 sentence personalized advice or focus area for this specific sign today
+  "luckyNumber": 12, // Replace with a random number 1-99
+  "energy": "Short phrase about today's energy for ${signName}", // Replace this text
+  "avoid": "Short phrase of what to avoid today", // Replace this text
+  "insight": "A 1-2 sentence daily horoscope insight specific to ${signName}.", // Replace this text
+  "personalizedFocus": "A 1-2 sentence personalized advice or focus area for ${signName}." // Replace this text
 }`;
 
     // Add a small delay before API call to help with basic rate limits
-    await delay(500);
+    await delay(600);
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
@@ -133,10 +134,7 @@ Return the response strictly as a JSON object with the following keys, and no ad
     // 3. Save to Cache
     try {
       localStorage.setItem(cacheKey, JSON.stringify(finalReading));
-      
-      // Optional: Cleanup old cache entries to prevent localStorage bloat
       setTimeout(() => cleanupOldCache(dateStr), 1000);
-      
     } catch (e) {
       console.warn("Failed to save to localStorage cache", e);
     }
@@ -144,14 +142,23 @@ Return the response strictly as a JSON object with the following keys, and no ad
     return finalReading;
 
   } catch (error) {
-    console.error("Error fetching daily reading from Gemini:", error);
-    // Fallback reading if API fails or rate limit hit
+    console.error("Error fetching daily reading from Gemini. Using fallback.", error);
+    
+    // Deterministic fallback so signs have different readings even if API fails
+    const seedString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${signId}`;
+    let hash = 0;
+    for (let i = 0; i < seedString.length; i++) {
+        hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
+        hash = hash & hash;
+    }
+    const absHash = Math.abs(hash);
+
     return {
-      luckyNumber: 7,
-      energy: "Reflective",
-      avoid: "Overthinking",
-      insight: "The stars are currently clouded, take a moment to look inward. (Fallback reading)",
-      personalizedFocus: "Take extra care of your mental well-being and rest.",
+      luckyNumber: (absHash % 99) + 1,
+      energy: ENERGIES[absHash % ENERGIES.length] || "Reflective",
+      avoid: AVOIDANCES[(absHash * 7) % AVOIDANCES.length] || "Overthinking",
+      insight: GENERAL_INSIGHTS[(absHash * 13) % GENERAL_INSIGHTS.length] || `The stars are clouded for ${signName}, take a moment to rest.`,
+      personalizedFocus: `Focus on grounding yourself today, ${signName}. Small, steady steps will lead to peace.`,
       date: dateStr
     };
   }
