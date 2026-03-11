@@ -49,8 +49,8 @@ function App() {
       case 'kundaliLoading':
         return (
           <div className="kundali-loading-state">
-            <div className="spinner" style={{ width: 50, height: 50, border: '4px solid rgba(139,92,246,0.2)', borderLeftColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite', boxShadow: '0 0 15px var(--accent-glow)' }}></div>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '1.5rem', fontSize: '1.2rem', letterSpacing: '0.05em' }}>Consulting the cosmos for your Kundali...</p>
+            <div className="spinner"></div>
+            <p className="loading-text">Consulting the cosmos for your Kundali...</p>
           </div>
         );
       case 'kundaliReading':
@@ -79,6 +79,11 @@ function App() {
       <main>
         {renderView()}
       </main>
+
+      <footer className="app-footer">
+        <p>Built with 💫 by <strong>Krrish Jaidka</strong> · Powered by Gemini AI</p>
+        <p className="footer-copy">© {new Date().getFullYear()} AstroDaily. For entertainment purposes only.</p>
+      </footer>
     </div>
   );
 }

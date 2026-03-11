@@ -12,6 +12,10 @@ export default function SignSelector({ onSelect }) {
             key={sign.id} 
             className="sign-card glass-panel" 
             onClick={() => onSelect(sign)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(sign); } }}
+            role="button"
+            tabIndex={0}
+            aria-label={`${sign.name} - ${sign.dateRange}`}
             style={{ animationDelay: `${index * 0.05}s` }}
           >
             <div className="sign-icon">{sign.icon}</div>
