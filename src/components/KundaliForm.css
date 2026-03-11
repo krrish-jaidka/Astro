@@ -1,0 +1,140 @@
+.kundali-form-container {
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.kundali-intro {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.kundali-intro .intro-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  filter: drop-shadow(0 0 12px var(--accent-glow));
+}
+
+.kundali-intro h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.kundali-intro p {
+  color: var(--text-secondary);
+  font-weight: 300;
+  font-size: 1.05rem;
+}
+
+.kundali-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.form-group input {
+  background: rgba(20, 20, 40, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
+}
+
+.form-group input::placeholder {
+  color: rgba(154, 160, 192, 0.5);
+}
+
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+/* Fix for date/time input icons in dark theme */
+.form-group input[type="date"],
+.form-group input[type="time"] {
+  color-scheme: dark;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.btn-generate {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 14px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
+  margin-top: 0.5rem;
+  letter-spacing: 0.03em;
+}
+
+.btn-generate:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.5);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-back-nav {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.btn-back-nav:hover {
+  color: var(--text-primary);
+  transform: translateX(-4px);
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .kundali-intro h2 {
+    font-size: 1.6rem;
+  }
+}

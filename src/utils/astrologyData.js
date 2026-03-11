@@ -182,3 +182,107 @@ function cleanupOldCache(currentDateStr) {
   }
 }
 
+/**
+ * Generates a personalized Kundali (Vedic birth chart) reading using Gemini API.
+ * Results are cached by the user's birth details.
+ */
+export async function getKundaliReading(details) {
+  const { fullName, dateOfBirth, timeOfBirth, placeOfBirth } = details;
+  
+  // Cache key based on birth details (these never change)
+  const cacheKey = `kundali_${dateOfBirth}_${timeOfBirth}_${placeOfBirth}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  try {
+    const cachedData = localStorage.getItem(cacheKey);
+    if (cachedData) {
+      console.log(`Using cached Kundali for ${fullName}`);
+      return JSON.parse(cachedData);
+    }
+  } catch (e) {
+    console.warn("Failed to read Kundali cache", e);
+  }
+
+  try {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_GEMINI_API_KEY in environment variables.");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.8 } });
+
+    const prompt = `You are an expert Vedic astrologer. Generate a detailed and personalized Kundali (Vedic birth chart) reading for a person with the following birth details:
+
+Name: ${fullName}
+Date of Birth: ${dateOfBirth}
+Time of Birth: ${timeOfBirth}
+Place of Birth: ${placeOfBirth}
+
+Return the response strictly as a JSON object with NO markdown formatting, backticks, or extra text. Use the exact keys shown below but REPLACE ALL values with unique, personalized content based on the birth details provided:
+
+{
+  "sunSign": "The person's Sun Sign",
+  "moonSign": "The person's Moon Sign (Rashi)",
+  "ascendant": "The person's Ascendant (Lagna)",
+  "planets": [
+    { "name": "Sun", "sign": "Sign placement" },
+    { "name": "Moon", "sign": "Sign placement" },
+    { "name": "Mars", "sign": "Sign placement" },
+    { "name": "Mercury", "sign": "Sign placement" },
+    { "name": "Jupiter", "sign": "Sign placement" },
+    { "name": "Venus", "sign": "Sign placement" },
+    { "name": "Saturn", "sign": "Sign placement" },
+    { "name": "Rahu", "sign": "Sign placement" },
+    { "name": "Ketu", "sign": "Sign placement" }
+  ],
+  "personalityTraits": "A 2-3 sentence description of key personality traits based on the chart.",
+  "lifePath": "A 2-3 sentence description of life path and career guidance.",
+  "strengths": ["Strength 1", "Strength 2", "Strength 3", "Strength 4"],
+  "challenges": ["Challenge 1", "Challenge 2", "Challenge 3", "Challenge 4"]
+}`;
+
+    await delay(600);
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let readingData;
+    try {
+      readingData = JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error("Failed to parse Kundali response as JSON:", responseText);
+      throw parseError;
+    }
+
+    // Cache the result
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(readingData));
+    } catch (e) {
+      console.warn("Failed to save Kundali cache", e);
+    }
+
+    return readingData;
+
+  } catch (error) {
+    console.error("Error fetching Kundali from Gemini:", error);
+    // Fallback
+    return {
+      sunSign: "Unable to determine",
+      moonSign: "Unable to determine",
+      ascendant: "Unable to determine",
+      planets: [
+        { name: "Sun", sign: "N/A" }, { name: "Moon", sign: "N/A" },
+        { name: "Mars", sign: "N/A" }, { name: "Mercury", sign: "N/A" },
+        { name: "Jupiter", sign: "N/A" }, { name: "Venus", sign: "N/A" },
+        { name: "Saturn", sign: "N/A" }, { name: "Rahu", sign: "N/A" },
+        { name: "Ketu", sign: "N/A" }
+      ],
+      personalityTraits: "The cosmic energies are currently unavailable. Please try again later.",
+      lifePath: "Your path is being written by the stars. Please try again shortly.",
+      strengths: ["Resilience", "Patience", "Adaptability", "Determination"],
+      challenges: ["Overthinking", "Self-doubt", "Impatience", "Perfectionism"]
+    };
+  }
+}
+
+
