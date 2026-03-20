@@ -103,7 +103,7 @@ export async function getDailyReading(signId) {
     if (!apiKey) throw new Error("Missing VITE_GEMINI_API_KEY");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.9 } });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { temperature: 0.9 } });
 
     const prompt = `You are an expert astrologer. Generate a highly unique and specific daily astrology reading for the zodiac sign ${signName} for today, ${dateStr}.
 
@@ -233,7 +233,7 @@ export async function getKundaliReading(details) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig: { temperature: 0.8 } });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { temperature: 0.8 } });
 
     const prompt = `You are an expert Vedic astrologer. Generate a detailed and personalized Kundali (Vedic birth chart) reading for a person with the following birth details:
 
